@@ -6,7 +6,7 @@
             fn(require, module, module.exports)
             return module.exports
           }
-          require('/Users/rwson/My/Code/my-lib(lab)/tinypack/src/index.js')
+          require('/Users/rwson/My/Code/my-lib(lab)/tinypack/src')
         })({'/Users/rwson/My/Code/my-lib(lab)/tinypack/src/index.js' : function(require, module, exports) {"use strict";
 
 var _hello = require("./hello.js");

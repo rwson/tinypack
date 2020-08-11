@@ -3,48 +3,72 @@ const fs = require('fs-extra');
 
 const { getAST, getDependencies, transform } = require('./parser');
 
-module.exports = class Compiler {
-  constructor(options) {
-    const { entry, output } = options;
-    this.entry = entry;
-    this.output = output;
-    this.modules = [];
-  }
+function Compiler(options) {
+  const { entry, output } = options;
+  this.entry = entry.path;
+  this.entryFile = entry.filename;
+  this.output = output;
+  this.modules = [];
+}
 
-  // 开启编译
+Compiler.prototype = {
+
+  constructor: Compiler,
+
+  /**
+   * 开始编译流程
+   */
   run() {
-    const entryModule = this.buildModule(this.entry, true);
+    const entryModule = this.buildModule(path.join(this.entry, this.entryFile), true);
+
     this.modules.push(entryModule);
+    
+    /**
+     * [
+     *    {
+     *        filename: '/xxxxxx/tinypack/src/index.js',
+     *        dependencies: ['./a.js', '../b.js'],
+     *        transformCode: babel-core 转换后的源码
+     *    }
+     * ]
+     */
     this.modules.map((_module) => {
       _module.dependencies.map((dependency) => {
         this.modules.push(this.buildModule(dependency));
       });
     });
-    // console.log(this.modules);
-    this.emitFiles();
-  }
 
-  // 构建模块相关
+    this.emitFiles();
+  },
+
+  /**
+   * 编译模块
+   * @param {*} filename 
+   * @param {*} isEntry 
+   */
   buildModule(filename, isEntry) {
     let ast;
     if (isEntry) {
       ast = getAST(filename);
     } else {
-      const absolutePath = path.join(process.cwd(), "./src", filename);
+      const absolutePath = path.join(this.entry, filename);
       ast = getAST(absolutePath);
     }
 
     return {
-      filename, // 文件名称
-      dependencies: getDependencies(ast), // 依赖列表
-      transformCode: transform(ast), // 转化后的代码
+      filename,
+      dependencies: getDependencies(ast),
+      transformCode: transform(ast)
     };
-  }
+  },
 
-  // 输出文件
+  /**
+   * 输出物理文件
+   */
   emitFiles() {
     const outputPath = path.join(this.output.path, this.output.filename);
-    let modules = "";
+
+    let modules = '';
     this.modules.map((_module) => {
       modules += `'${_module.filename}' : function(require, module, exports) {${_module.transformCode}},`;
     });
@@ -64,4 +88,7 @@ module.exports = class Compiler {
     fs.ensureDirSync(this.output.path);
     fs.writeFileSync(outputPath, bundle, "utf-8");
   }
+
 };
+
+module.exports = Compiler;

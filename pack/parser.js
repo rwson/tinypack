@@ -5,15 +5,21 @@ const traverse = require('@babel/traverse').default;
 const { transformFromAst } = require('babel-core');
 
 module.exports = {
-  // 解析我们的代码生成AST抽象语法树
+  
+  /**
+   * 把代码解析成AST
+   */
   getAST: (path) => {
-    const source = fs.readFileSync(path, "utf-8");
+    const source = fs.readFileSync(path, 'utf-8');
 
     return parser.parse(source, {
-      sourceType: "module", //表示我们要解析的是ES模块
+      sourceType: 'module'
     });
   },
-  // 对AST节点进行递归遍历
+
+  /**
+   * 遍历AST对象，获取当前模块依赖了哪些其他模块
+   */
   getDependencies: (ast) => {
     const dependencies = [];
     traverse(ast, {
@@ -23,10 +29,13 @@ module.exports = {
     });
     return dependencies;
   },
-  // 将获得的ES6的AST转化成ES5
+
+  /**
+   * AST转换成ES5
+   */
   transform: (ast) => {
     const { code } = transformFromAst(ast, null, {
-      presets: ["env"]
+      presets: ['env']
     });
     return code;
   },
